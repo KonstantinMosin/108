@@ -1,10 +1,12 @@
+from proto import message_pb2
 from src.messageTools import parseDelimited
 
 import unittest
 
 class ParseDelimitedTest(unittest.TestCase):
     def setUp(self):
-        parseDelimited(1, 2)
-    
+        self.message = message_pb2.WrapperMessage()
+
     def test_nulldata(self):
-        self.assertIsNone(parseDelimited(1,2))
+        self.assertIsNone(parseDelimited(None))
+        self.assertIsNone(parseDelimited(""))
