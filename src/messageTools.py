@@ -1,7 +1,9 @@
-from proto import message_pb2
 from google.protobuf.internal.decoder import _DecodeVarint32
 
-def parseDelimited(data):
+def parseDelimited(data, typename):
+    def converter(type):
+        return typename(type)
+
     if data is None or len(data) == 0:
         return None
     
@@ -14,7 +16,7 @@ def parseDelimited(data):
         buffer = data[n:n + length]
         n += length
 
-        message = message_pb2.WrapperMessage()
+        message = converter(typename)
         message.ParseFromString(buffer)
 
     return message, length + pos
