@@ -1,5 +1,6 @@
 from typing import TypeVar, Any, Type
 from google.protobuf.internal.decoder import _DecodeVarint32
+from google.protobuf.message import DecodeError
 
 T = TypeVar('T')
 
@@ -13,11 +14,14 @@ def parseDelimited(data: Any, message_type: Type[T]) -> Type[T]:
         return None, 0
 
     buffer = data[pos:pos + length]
+    print(data, buffer)
     
     message = message_type()
     try:
         message.ParseFromString(buffer)
-    except:
+    except AttributeError:
+        return None, pos + length
+    except DecodeError:
         return None, pos + length
     
     return message, pos + length
@@ -27,11 +31,11 @@ class DelimitedMessagesStreamParser:
         self.type = type
         self.buffer: bytes = b''
 
-    def parse(self, data: Any) -> list[Type[T]]:
+    def parse(self, data: bytes) -> list[Type[T]]:
         try:
             self.buffer += data
-        except:
-            return None
+        except TypeError:
+            return []
 
         messages: list[Type[T]] = []
         while (len(self.buffer)):
