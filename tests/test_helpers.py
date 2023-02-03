@@ -1,5 +1,5 @@
-from proto.message_pb2 import WrapperMessage
-from src.messageTools import parseDelimited
+from utils.proto.message_pb2 import WrapperMessage
+from src.helpers import parseDelimited
 
 from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.encoder import _VarintBytes
