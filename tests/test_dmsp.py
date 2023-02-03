@@ -16,13 +16,13 @@ class DelimitedMessagesStreamParserTest(unittest.TestCase):
         """
 
         messages = parser.parse("")
-        self.assertIsNone(messages)
+        self.assertListEqual([], messages)
         """
         The function takes bytes
         """
 
         messages = parser.parse(None)
-        self.assertIsNone(messages)
+        self.assertListEqual([], messages)
         """
         The function takes bytes
         """
@@ -37,10 +37,51 @@ class DelimitedMessagesStreamParserTest(unittest.TestCase):
         self.assertListEqual([], messages)
     
     def test_corrupted_data(self):
-        # TODO
         message = WrapperMessage()
-        message.fast_response.current_date_time = "1"
+        message.fast_response.current_date_time = '1'
         message = _VarintBytes(message.ByteSize()) + message.SerializeToString() # \x05\n\x03\n\x011
         
-        pass
+        stream = message * 3 # \x05\n\x03\n\x011\x05\n\x03\n\x011\x05\n\x03\n\x011
+        """
+        ----------------- ----------------- -----------------
+        \x05\n\x03\n\x011 \x05\n\x03\n\x011 \x05\n\x03\n\x011
+        """
+        parser = DelimitedMessagesStreamParser(WrapperMessage)
+        messages = parser.parse(stream)
+
+        self.assertEqual(3, len(messages))
+        for m in messages:
+            self.assertTrue(m.HasField('fast_response'))
+
+        stream_corrupted = stream[:len(message)]
+        stream_corrupted += b'\x03'
+        stream_corrupted += stream[len(message) + 1:]
+        """
+        ----------------- ----------------- -----------------
+        \x05\n\x03\n\x011 \x05\n\x03\n\x011 \x05\n\x03\n\x011
+                          ^
+                          \x03
+        ----------------- ------------ ----- -----------------                  
+        \x05\n\x03\n\x011 \x03\n\x03\n \x011 \x05\n\x03\n\x011
+        """
+
+        messages = parser.parse(stream_corrupted)
         
+        self.assertEqual(2, len(messages))
+        for m in messages:
+            self.assertTrue(m.HasField('fast_response'))
+        
+        stream_corrupted = b'\x02\x01\x05\x02\x01\x01\x01'
+        stream_corrupted += stream
+
+        # print(stream_corrupted)
+        
+        messages = parser.parse(stream_corrupted)
+        """
+        ------------ ------------ -------- ------------------------------ -----------------
+        \x02\x01\x05 \x02\x01\x01 \x01\x05 \n\x03\n\x011\x05\n\x03\n\x011 \x05\n\x03\n\x011
+        """
+        
+        self.assertEqual(1, len(messages))
+        for m in messages:
+            self.assertTrue(m.HasField('fast_response'))
