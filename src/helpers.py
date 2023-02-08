@@ -18,9 +18,7 @@ def parseDelimited(data: Any, message_type: Type[T]) -> Type[T]:
     message = message_type()
     try:
         message.ParseFromString(buffer)
-    except AttributeError:
-        return None, pos + length
-    except DecodeError:
+    except AttributeError or DecodeError:
         return None, pos + length
     
     return message, pos + length

@@ -20,5 +20,7 @@ class DelimitedMessagesStreamParser:
             if message:
                 messages.append(message)
             self.buffer = self.buffer[bytesConsumed:]
+            if bytesConsumed == 0:
+                break
         
         return messages
